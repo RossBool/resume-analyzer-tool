@@ -1,0 +1,8 @@
+- generic [ref=e3]:
+  - generic [ref=e5]:
+    - heading "🎮 简历分析工具" [level=1] [ref=e6]:
+      - generic [ref=e7]: 🎮
+      - text: 简历分析工具
+    - paragraph [ref=e8]: 游戏行业专业简历分析系统
+  - main [ref=e9]
+  - paragraph [ref=e11]: © 2024 RossBool. All rights reserved.

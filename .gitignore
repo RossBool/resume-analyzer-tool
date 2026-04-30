@@ -1,0 +1,33 @@
+# 依赖
+vendor/
+node_modules/
+__pycache__/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 日志
+*.log
+runtime/
+*.cache
+
+# 配置（敏感信息）
+.env
+.env.local
+.env.*.local
+
+# 上传文件
+backend/public/uploads/*
+!backend/public/uploads/.gitkeep
+
+# 构建产物
+frontend/dist/
+frontend/build/
+
+# 系统文件
+.DS_Store
+Thumbs.db

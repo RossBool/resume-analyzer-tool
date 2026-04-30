@@ -1,0 +1,49 @@
+- generic [ref=e3]:
+  - generic [ref=e5]:
+    - heading "🎮 简历分析工具" [level=1] [ref=e6]:
+      - generic [ref=e7]: 🎮
+      - text: 简历分析工具
+    - paragraph [ref=e8]: 游戏行业专业简历分析系统
+  - main [ref=e9]:
+    - generic [ref=e11]:
+      - generic [ref=e15]:
+        - img "file-text" [ref=e16]:
+          - img [ref=e17]
+        - generic [ref=e19]: 欢迎使用简历分析工具
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e24] [cursor=pointer]:
+            - img "file-search" [ref=e26]:
+              - img [ref=e27]
+            - heading "信息提取" [level=3] [ref=e29]
+            - paragraph [ref=e30]: 自动提取个人信息、教育背景、工作经验和技能特长
+          - generic [ref=e33] [cursor=pointer]:
+            - img "thunderbolt" [ref=e35]:
+              - img [ref=e36]
+            - heading "AI 智能分析" [level=3] [ref=e38]
+            - paragraph [ref=e39]: 基于 GLM-4.7 模型进行深度简历分析和评估
+          - generic [ref=e42] [cursor=pointer]:
+            - img "bar-chart" [ref=e44]:
+              - img [ref=e45]
+            - heading "技能匹配" [level=3] [ref=e47]
+            - paragraph [ref=e48]: 对比职位要求，评估候选人技能匹配程度
+          - generic [ref=e51] [cursor=pointer]:
+            - img "message" [ref=e53]:
+              - img [ref=e54]
+            - heading "问题生成" [level=3] [ref=e56]
+            - paragraph [ref=e57]: 自动生成针对性面试问题，提高面试效率
+          - generic [ref=e60] [cursor=pointer]:
+            - img "rise" [ref=e62]:
+              - img [ref=e63]
+            - heading "数据可视化" [level=3] [ref=e65]
+            - paragraph [ref=e66]: 图表展示分析结果，直观了解候选人情况
+          - generic [ref=e69] [cursor=pointer]:
+            - img "tool" [ref=e71]:
+              - img [ref=e72]
+            - heading "多格式支持" [level=3] [ref=e74]
+            - paragraph [ref=e75]: 支持 PDF、Word 等多种简历格式
+        - button "upload 开始分析简历" [ref=e77] [cursor=pointer]:
+          - img "upload" [ref=e78]:
+            - img [ref=e79]
+          - generic [ref=e81]: 开始分析简历
+  - paragraph [ref=e83]: © 2024 RossBool. All rights reserved.

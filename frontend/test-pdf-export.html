@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF 导出测试</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.12.1/html2pdf.bundle.min.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .test-section {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+
+    #content-to-export {
+      padding: 40px;
+      background: white;
+      border: 1px solid #e8e8e8;
+      margin-bottom: 20px;
+    }
+
+    h1 { color: #1890ff; }
+    h2 { color: #333; border-left: 4px solid #1890ff; padding-left: 12px; }
+    h3 { color: #444; }
+
+    button {
+      padding: 10px 20px;
+      background: #1890ff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background: #40a9ff;
+    }
+
+    #log {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 14px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .log-entry {
+      margin: 5px 0;
+      padding: 5px;
+      border-left: 3px solid #ccc;
+    }
+
+    .log-success { border-left-color: #52c41a; }
+    .log-error { border-left-color: #f5222d; }
+    .log-info { border-left-color: #1890ff; }
+  </style>
+</head>
+<body>
+  <h1>PDF 导出功能测试</h1>
+
+  <div class="test-section">
+    <h2>测试内容</h2>
+    <div id="content-to-export">
+      <div style="text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #e8e8e8;">
+        <h1 style="margin: 0 0 8px 0;">简历分析报告</h1>
+        <p style="color: #999; font-size: 14px; margin: 0;">生成时间：<span id="timestamp"></span></p>
+      </div>
+
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.8; color: #333;">
+        <h2>📋 个人信息</h2>
+        <ul>
+          <li><strong>姓名</strong>：张三</li>
+          <li><strong>联系方式</strong>：13800138000</li>
+          <li><strong>邮箱</strong>：zhangsan@example.com</li>
+          <li><strong>所在地</strong>：北京市</li>
+        </ul>
+
+        <h2>🎓 教育背景</h2>
+        <h3>清华大学</h3>
+        <ul>
+          <li><strong>学历</strong>：本科</li>
+          <li><strong>专业</strong>：计算机科学与技术</li>
+          <li><strong>毕业年份</strong>：2020年</li>
+        </ul>
+
+        <h2>💼 工作经验</h2>
+        <h3>腾讯游戏</h3>
+        <p><strong>职位</strong>：后端开发工程师</p>
+        <p><strong>时间</strong>：2020.07 - 至今</p>
+        <p><strong>主要职责</strong>：</p>
+        <ul>
+          <li>负责游戏服务器核心模块开发</li>
+          <li>参与系统架构设计与优化</li>
+          <li>编写技术文档</li>
+        </ul>
+
+        <h2>🛠️ 技能清单</h2>
+        <ul>
+          <li><strong>编程语言</strong>：PHP, Golang, Python</li>
+          <li><strong>框架</strong>：Hyperf, Swoole, Laravel</li>
+          <li><strong>数据库</strong>：MySQL, Redis, MongoDB</li>
+        </ul>
+
+        <h2>✅ 总结</h2>
+        <p>候选人具有扎实的后端开发经验，熟练掌握 PHP 和 Golang，有游戏行业背景，综合评分 85 分。</p>
+      </div>
+
+      <div style="margin-top: 60px; padding-top: 20px; border-top: 1px solid #e8e8e8; text-align: center; color: #999; font-size: 12px;">
+        <p style="margin: 4px 0;">本报告由 AI 自动生成，仅供参考</p>
+        <p style="margin: 4px 0;">简历分析工具 - RossBool</p>
+      </div>
+    </div>
+
+    <button onclick="testExport()">测试导出 PDF</button>
+  </div>
+
+  <div class="test-section">
+    <h2>测试日志</h2>
+    <div id="log"></div>
+  </div>
+
+  <script>
+    // 设置时间戳
+    document.getElementById('timestamp').textContent = new Date().toLocaleString('zh-CN')
+
+    function log(message, type = 'info') {
+      const logDiv = document.getElementById('log')
+      const entry = document.createElement('div')
+      entry.className = `log-entry log-${type}`
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`
+      logDiv.appendChild(entry)
+      console.log(message)
+    }
+
+    async function testExport() {
+      try {
+        log('开始测试 PDF 导出...', 'info')
+
+        const content = document.getElementById('content-to-export')
+
+        if (!content) {
+          log('错误：找不到导出内容', 'error')
+          return
+        }
+
+        log(`内容长度: ${content.innerHTML.length} 字符`, 'info')
+        log(`内容高度: ${content.offsetHeight} px`, 'info')
+
+        // 创建临时容器
+        const container = document.createElement('div')
+        container.innerHTML = content.innerHTML
+        container.style.position = 'absolute'
+        container.style.left = '-9999px'
+        container.style.top = '0'
+        container.style.width = '210mm'
+        container.style.background = 'white'
+        document.body.appendChild(container)
+
+        log('临时容器已创建', 'success')
+
+        // 等待渲染
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        log('准备生成 PDF...', 'info')
+
+        // 配置 html2pdf
+        const opt = {
+          margin: 10,
+          filename: `test_export_${new Date().getTime()}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            letterRendering: true,
+            logging: true,
+            onclone: function(clonedDoc) {
+              log('html2canvas onclone 触发', 'info')
+              return clonedDoc
+            }
+          },
+          jsPDF: {
+            unit: 'mm',
+            format: 'a4',
+            orientation: 'portrait'
+          }
+        }
+
+        log(`PDF 配置: ${JSON.stringify(opt)}`, 'info')
+
+        // 生成 PDF
+        await html2pdf().set(opt).from(container).save()
+
+        log('✅ PDF 导出成功！', 'success')
+
+        // 清理
+        document.body.removeChild(container)
+        log('临时容器已清理', 'info')
+
+      } catch (error) {
+        log(`❌ 错误: ${error.message}`, 'error')
+        console.error('详细错误:', error)
+      }
+    }
+
+    // 页面加载完成后的初始化
+    window.addEventListener('load', () => {
+      log('测试页面已加载', 'success')
+      log('html2pdf.js 版本: ' + (html2pdf ? '已加载' : '未加载'), 'info')
+    })
+  </script>
+</body>
+</html>

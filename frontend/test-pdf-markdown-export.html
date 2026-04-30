@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Markdown 导出测试</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.12.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .test-section {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+
+    #markdown-input {
+      width: 100%;
+      min-height: 200px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: #1890ff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background: #40a9ff;
+    }
+
+    #log {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 14px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .log-entry {
+      margin: 5px 0;
+      padding: 5px;
+      border-left: 3px solid #ccc;
+    }
+
+    .log-success { border-left-color: #52c41a; }
+    .log-error { border-left-color: #f5222d; }
+    .log-info { border-left-color: #1890ff; }
+  </style>
+</head>
+<body>
+  <h1>PDF Markdown 导出测试</h1>
+
+  <div class="test-section">
+    <h2>测试 Markdown 内容</h2>
+    <textarea id="markdown-input"># 简历分析报告
+
+## 📋 个人信息
+- **姓名**：张三
+- **联系方式**：13800138000
+- **邮箱**：zhangsan@example.com
+- **所在地**：北京市
+
+## 🎓 教育背景
+### 清华大学
+- **学历**：本科
+- **专业**：计算机科学与技术
+- **毕业年份**：2020年
+
+## 💼 工作经验
+### 腾讯游戏
+- **职位**：后端开发工程师
+- **时间**：2020.07 - 至今
+
+**主要职责**：
+- 负责游戏服务器核心模块开发
+- 参与系统架构设计与优化
+- 编写技术文档
+
+## 🛠️ 技能清单
+- **编程语言**：PHP, Golang, Python
+- **框架**：Hyperf, Swoole, Laravel
+- **数据库**：MySQL, Redis, MongoDB
+
+## ✅ 总结
+候选人具有扎实的后端开发经验，熟练掌握 PHP 和 Golang，有游戏行业背景，综合评分 85 分。</textarea>
+    <button onclick="testExport()">测试导出 PDF</button>
+  </div>
+
+  <div class="test-section">
+    <h2>测试日志</h2>
+    <div id="log"></div>
+  </div>
+
+  <script>
+    function log(message, type = 'info') {
+      const logDiv = document.getElementById('log')
+      const entry = document.createElement('div')
+      entry.className = `log-entry log-${type}`
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`
+      logDiv.appendChild(entry)
+      console.log(message)
+    }
+
+    async function testExport() {
+      try {
+        log('开始测试 PDF 导出...', 'info')
+
+        // 获取 Markdown 内容
+        const markdownContent = document.getElementById('markdown-input').value
+
+        if (!markdownContent) {
+          log('错误：Markdown 内容为空', 'error')
+          return
+        }
+
+        log(`Markdown 内容长度: ${markdownContent.length} 字符`, 'info')
+
+        // 将 Markdown 转换为 HTML
+        const htmlContent = marked.parse(markdownContent)
+
+        log(`转换后的 HTML 长度: ${htmlContent.length} 字符`, 'info')
+
+        // 创建 PDF 容器
+        const container = document.createElement('div')
+        container.innerHTML = `
+          <div style="padding: 40px; background: white;">
+            <div style="text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #e8e8e8;">
+              <h1 style="font-size: 28px; font-weight: 700; color: #1890ff; margin: 0 0 8px 0;">简历分析报告</h1>
+              <p style="color: #999; font-size: 14px; margin: 0;">生成时间：${new Date().toLocaleString('zh-CN')}</p>
+            </div>
+            <div class="content" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.8; color: #333;">
+              ${htmlContent}
+            </div>
+            <div style="margin-top: 60px; padding-top: 20px; border-top: 1px solid #e8e8e8; text-align: center; color: #999; font-size: 12px;">
+              <p style="margin: 4px 0;">本报告由 AI 自动生成，仅供参考</p>
+              <p style="margin: 4px 0;">简历分析工具 - RossBool</p>
+            </div>
+          </div>
+        `
+
+        container.style.position = 'absolute'
+        container.style.left = '-9999px'
+        container.style.top = '0'
+        container.style.width = '210mm'
+        container.style.background = 'white'
+        document.body.appendChild(container)
+
+        log('✅ 容器已创建，高度: ' + container.offsetHeight + 'px', 'success')
+
+        // 等待 DOM 渲染
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        log('DOM 渲染完成，开始生成 PDF...', 'info')
+
+        // 配置 html2pdf
+        const opt = {
+          margin: 10,
+          filename: `test_markdown_export_${new Date().getTime()}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            letterRendering: true,
+            logging: false
+          },
+          jsPDF: {
+            unit: 'mm',
+            format: 'a4',
+            orientation: 'portrait'
+          }
+        }
+
+        log('PDF 配置: ' + JSON.stringify(opt), 'info')
+
+        // 生成并下载 PDF
+        await html2pdf().set(opt).from(container).save()
+
+        log('✅ PDF 导出成功！', 'success')
+
+        // 清理临时容器
+        document.body.removeChild(container)
+        log('✅ 临时容器已清理', 'info')
+
+      } catch (error) {
+        log(`❌ 错误: ${error.message}`, 'error')
+        console.error('详细错误:', error)
+      }
+    }
+
+    // 页面加载完成
+    window.addEventListener('load', () => {
+      log('测试页面已加载', 'success')
+      log('html2pdf.js 版本: ' + (html2pdf ? '已加载' : '未加载'), 'info')
+      log('marked 版本: ' + (marked ? '已加载' : '未加载'), 'info')
+    })
+  </script>
+</body>
+</html>

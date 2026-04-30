@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JSON解析器测试</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #1890ff;
+      margin-bottom: 30px;
+    }
+    .test-case {
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
+    }
+    .test-case.pass {
+      border-color: #52c41a;
+      background: #f6ffed;
+    }
+    .test-case.fail {
+      border-color: #f5222d;
+      background: #fff1f0;
+    }
+    .test-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .test-input {
+      background: #fafafa;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      margin-bottom: 10px;
+      white-space: pre-wrap;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    .test-output {
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .status.pass {
+      background: #52c41a;
+      color: white;
+    }
+    .status.fail {
+      background: #f5222d;
+      color: white;
+    }
+    button {
+      background: #1890ff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background: #40a9ff;
+    }
+    .summary {
+      margin-top: 30px;
+      padding: 20px;
+      background: #e6f7ff;
+      border: 1px solid #91d5ff;
+      border-radius: 6px;
+    }
+    .error-detail {
+      color: #f5222d;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 JSON解析器测试工具</h1>
+
+    <div>
+      <button onclick="runAllTests()">🚀 运行所有测试</button>
+      <button onclick="runRealWorldTest()">📋 测试真实简历JSON</button>
+      <button onclick="clearResults()">🗑️ 清空结果</button>
+    </div>
+
+    <div id="results"></div>
+
+    <div id="summary" class="summary" style="display: none;">
+      <h3>测试总结</h3>
+      <div id="summary-content"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    // 导入解析函数
+    const extractCompleteJSON = (str) => {
+      const firstBrace = str.indexOf('{');
+      if (firstBrace === -1) return null;
+
+      let braceCount = 0;
+      let bracketCount = 0;
+      let inString = false;
+      let escapeNext = false;
+      let endPos = -1;
+
+      for (let i = firstBrace; i < str.length; i++) {
+        const char = str[i];
+
+        if (escapeNext) {
+          escapeNext = false;
+          continue;
+        }
+
+        if (char === '\\') {
+          escapeNext = true;
+          continue;
+        }
+
+        if (char === '"') {
+          inString = !inString;
+          continue;
+        }
+
+        if (inString) continue;
+
+        if (char === '{') braceCount++;
+        else if (char === '}') braceCount--;
+        else if (char === '[') bracketCount++;
+        else if (char === ']') bracketCount--;
+
+        if (braceCount === 0 && bracketCount === 0 && i > firstBrace) {
+          endPos = i;
+          break;
+        }
+      }
+
+      if (endPos === -1) {
+        const lastBrace = str.lastIndexOf('}');
+        if (lastBrace > firstBrace) {
+          return str.substring(firstBrace, lastBrace + 1);
+        }
+        return null;
+      }
+
+      return str.substring(firstBrace, endPos + 1);
+    };
+
+    const tryParseJSON = (jsonString) => {
+      if (!jsonString || typeof jsonString !== 'string') {
+        throw new Error('输入内容为空或不是字符串');
+      }
+
+      let cleaned = jsonString
+        .replace(/```json\s*/gi, '')
+        .replace(/```\s*/g, '')
+        .replace(/^[^{]*({)/, '$1')
+        .replace(/(})[^}]*$/, '$1')
+        .trim();
+
+      try {
+        return JSON.parse(cleaned);
+      } catch (e) {}
+
+      const extracted = extractCompleteJSON(cleaned);
+      if (!extracted) {
+        throw new Error('无法找到有效的 JSON 对象');
+      }
+
+      try {
+        return JSON.parse(extracted);
+      } catch (e) {}
+
+      let fixed = extracted;
+      fixed = fixed.replace(/,\s*([}\]])/g, '$1');
+      fixed = fixed.replace(/\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '{"$1":');
+      fixed = fixed.replace(/'/g, '"');
+      fixed = fixed.replace(/\[\s*,/g, '[');
+      fixed = fixed.replace(/,\s*\]/g, ']');
+      fixed = fixed.replace(/"\s*"/g, '", "');
+      fixed = fixed.replace(/}"\s*"/g, '}, "');
+      fixed = fixed.replace(/]"\s*"/g, '], "');
+      fixed = fixed.replace(/\/\*[\s\S]*?\*\//g, '');
+      fixed = fixed.replace(/\/\/.*/g, '');
+      fixed = fixed.replace(/,\s*}/g, '}');
+      fixed = fixed.replace(/,\s*]/g, ']');
+
+      const openBraces = (fixed.match(/\{/g) || []).length;
+      const closeBraces = (fixed.match(/\}/g) || []).length;
+      const openBrackets = (fixed.match(/\[/g) || []).length;
+      const closeBrackets = (fixed.match(/\]/g) || []).length;
+
+      if (openBraces > closeBraces) {
+        fixed += '}'.repeat(openBraces - closeBraces);
+      }
+      if (openBrackets > closeBrackets) {
+        fixed += ']'.repeat(openBrackets - closeBrackets);
+      }
+
+      try {
+        return JSON.parse(fixed);
+      } catch (e) {
+        const partiallyFixed = fixIncompleteJSON(fixed);
+        try {
+          return JSON.parse(partiallyFixed);
+        } catch (e2) {}
+      }
+
+      const compressed = fixed.replace(/\s+/g, ' ').trim();
+      try {
+        return JSON.parse(compressed);
+      } catch (e) {
+        throw new Error(`JSON 解析失败：${e.message}`);
+      }
+    };
+
+    const fixIncompleteJSON = (jsonStr) => {
+      let fixed = jsonStr;
+
+      // 修复字符串中的特殊字符
+      fixed = fixed.replace(/\\n/g, '\\\\n');
+      fixed = fixed.replace(/\\r/g, '\\\\r');
+      fixed = fixed.replace(/\\t/g, '\\\\t');
+
+      // 处理未闭合的字符串
+      const lines = fixed.split('\n');
+      const newLines = lines.map(line => {
+        const quotes = (line.match(/"/g) || []).length;
+        if (quotes % 2 !== 0) {
+          return line + '"';
+        }
+        return line;
+      });
+      fixed = newLines.join('\n');
+
+      // 智能截断不完整的对象
+      fixed = smartTruncateIncomplete(fixed);
+
+      return fixed;
+    };
+
+    const smartTruncateIncomplete = (jsonStr) => {
+      let trimmed = jsonStr.trim();
+
+      // 策略1: 检测未闭合的字符串
+      const quotes = (trimmed.match(/"/g) || []).length;
+      const hasUnclosedString = quotes % 2 !== 0;
+
+      if (hasUnclosedString) {
+        // 有未闭合的字符串，说明JSON被截断了
+        // 需要找到最后一个完整的对象/数组位置
+
+        // 从后向前查找，找到最后一个完整的结构
+        let lastValidPos = -1;
+
+        // 从字符串末尾开始，找到最后一个完整的结构
+        for (let i = trimmed.length - 1; i >= 0; i--) {
+          const char = trimmed[i];
+
+          // 找到最后一个完整的对象或数组结尾
+          if (char === '}' || char === ']') {
+            // 检查从这个位置向前，括号是否平衡
+            let braceCount = 0;
+            let bracketCount = 0;
+            let inString = false;
+            let escapeNext = false;
+            let valid = true;
+
+            for (let j = 0; j <= i; j++) {
+              const c = trimmed[j];
+
+              if (escapeNext) {
+                escapeNext = false;
+                continue;
+              }
+
+              if (c === '\\') {
+                escapeNext = true;
+                continue;
+              }
+
+              if (c === '"') {
+                inString = !inString;
+                continue;
+              }
+
+              if (inString) continue;
+
+              if (c === '{') braceCount++;
+              else if (c === '}') braceCount--;
+              else if (c === '[') bracketCount++;
+              else if (c === ']') bracketCount--;
+
+              if (braceCount < 0 || bracketCount < 0) {
+                valid = false;
+                break;
+              }
+            }
+
+            // 如果括号平衡且在字符串外，这是一个有效的结束位置
+            if (valid && braceCount === 0 && bracketCount === 0 && !inString) {
+              lastValidPos = i;
+              break;
+            }
+          }
+        }
+
+        if (lastValidPos > 0) {
+          // 找到了最后一个有效位置，截断到这里
+          trimmed = trimmed.substring(0, lastValidPos + 1);
+        } else {
+          // 没找到有效位置，尝试更激进的策略
+          // 查找最后一个逗号，在其后截断
+          const lastCommaIndex = trimmed.lastIndexOf(',');
+          if (lastCommaIndex > 0) {
+            // 检查这个逗号是否在字符串中
+            let beforeComma = trimmed.substring(0, lastCommaIndex);
+            const quotesBefore = (beforeComma.match(/"/g) || []).length;
+            if (quotesBefore % 2 === 0) {
+              // 逗号不在字符串中，可以安全截断
+              trimmed = beforeComma;
+            }
+          }
+        }
+
+        jsonStr = trimmed;
+      }
+
+      // 策略2: 补全缺失的闭合括号
+      const openBraces = (jsonStr.match(/\{/g) || []).length;
+      const closeBraces = (jsonStr.match(/\}/g) || []).length;
+      const openBrackets = (jsonStr.match(/\[/g) || []).length;
+      const closeBrackets = (jsonStr.match(/\]/g) || []).length;
+
+      const missingBraces = openBraces - closeBraces;
+      const missingBrackets = openBrackets - closeBrackets;
+
+      if (missingBraces > 0) {
+        jsonStr += '}'.repeat(missingBraces);
+      }
+      if (missingBrackets > 0) {
+        jsonStr += ']'.repeat(missingBrackets);
+      }
+
+      // 策略3: 移除所有尾随逗号
+      jsonStr = jsonStr.replace(/,\s*([}\]])/g, '$1');
+
+      return jsonStr;
+    };
+
+    // 测试用例
+    const testCases = [
+      {
+        name: '标准JSON',
+        input: '{"name":"黎国胜","age":30}',
+        expectPass: true
+      },
+      {
+        name: '带Markdown标记',
+        input: '```json\n{"name":"黎国胜","age":30}\n```',
+        expectPass: true
+      },
+      {
+        name: '带尾随逗号',
+        input: '{"name":"黎国胜","age":30,}',
+        expectPass: true
+      },
+      {
+        name: '真实简历JSON（完整）',
+        input: JSON.stringify({
+          personal_info: { name: "冯兆贤", contact: "+86 19227660411", email: "496224604@qq.com", location: "广州", age: "27", gender: "男" },
+          education: [{ school: "广州软件学院", degree: "本科", major: "软件工程", graduation_year: "2020", gpa: "" }],
+          work_experience: [{ company: "广州乐牛游戏科技有限公司", position: "开发工程师", duration: "2022.9 - 至今", duration_months: 20, industry: "游戏", responsibilities: [], achievements: [], tech_stack: [] }],
+          skills: { programming_languages: [], game_engines: [], tools: [], domains: [], other_skills: [] },
+          skill_matching: { score: 75, analysis: "", matched_skills: [], missing_skills: [] },
+          experience_analysis: { game_industry_years: 0, game_industry_companies: [], total_projects: 0, game_projects: 0, leadership_experience: false, team_size: "", achievements: [], career_progression: "" },
+          education_assessment: { degree_level: "", major_relevance: "", school_level: "", score: 75, analysis: "" },
+          potential_prediction: { score: 75, strengths: [], weaknesses: [], development_potential: "", suitable_positions: [], analysis: "" },
+          recommendations: [""],
+          summary: { overall_evaluation: "", key_highlights: [], risk_factors: [], hire_recommendation: "", salary_range: "" }
+        }, null, 2),
+        expectPass: true
+      },
+      {
+        name: '不完整JSON（截断）',
+        input: '{"personal_info":{"name":"冯兆贤","contact":"+86 19227660411","email":"496224604@qq.com","location":"广州","age":"27","gender":"男"},"education":[{"school":"广州软件学院","degree":"本科","major":"软件工程","graduation_year":"2020","gpa":""}],"work_experience":[{"company":"广州乐牛游戏科技有限公司","position":"开发工程师","duration":"2022.9 - 至今","duration_months":20,"industry":"游戏",',
+        expectPass: false
+      },
+      {
+        name: '字段值字符串未闭合（公司名截断）',
+        input: '{ "personal_info": { "name": "林洽文", "contact": "18825139046", "email": "", "location": "广州", "age": "34", "gender": "男" }, "education": [ { "school": "广东交通职业技术学院", "degree": "大专", "major": "软件工程技术", "graduation_year": "2014", "gpa": "" }, { "school": "鹤山二中", "degree": "高中", "major": "高中理科", "graduation_year": "2011", "gpa": "" } ], "work_experience": [ { "company": "海南九紫网络科技有限公',
+        expectPass: false
+      },
+      {
+        name: '带单引号',
+        input: "{'name':'黎国胜','age':30}",
+        expectPass: true
+      }
+    ];
+
+    window.runAllTests = () => {
+      const resultsDiv = document.getElementById('results');
+      const summaryDiv = document.getElementById('summary');
+      const summaryContent = document.getElementById('summary-content');
+      resultsDiv.innerHTML = '';
+      summaryDiv.style.display = 'none';
+
+      let passed = 0;
+      let failed = 0;
+
+      testCases.forEach((testCase, index) => {
+        const resultDiv = document.createElement('div');
+        resultDiv.className = 'test-case';
+
+        let result, error;
+        try {
+          result = tryParseJSON(testCase.input);
+        } catch (e) {
+          error = e.message;
+        }
+
+        const testPassed = !!result;
+        const expectedPass = testCase.expectPass;
+        const correct = testPassed === expectedPass;
+
+        if (correct) {
+          passed++;
+          resultDiv.classList.add('pass');
+        } else {
+          failed++;
+          resultDiv.classList.add('fail');
+        }
+
+        resultDiv.innerHTML = `
+          <div class="test-title">测试 ${index + 1}: ${testCase.name}</div>
+          <div class="test-input"><strong>输入:</strong>\n${testCase.input.substring(0, 300)}${testCase.input.length > 300 ? '...' : ''}</div>
+          <div class="test-output">
+            <strong>结果:</strong>
+            ${testPassed ? '<span class="status pass">✓ 解析成功</span>' : '<span class="status fail">✗ 解析失败</span>'}
+            ${error ? `<div class="error-detail">${error}</div>` : ''}
+            ${result ? `<div style="margin-top:10px;"><strong>解析结果:</strong> ${JSON.stringify(result).substring(0, 200)}...</div>` : ''}
+          </div>
+        `;
+
+        resultsDiv.appendChild(resultDiv);
+      });
+
+      // 显示总结
+      summaryContent.innerHTML = `
+        <p><strong>总测试数:</strong> ${testCases.length}</p>
+        <p style="color: #52c41a;"><strong>通过:</strong> ${passed}</p>
+        <p style="color: #f5222d;"><strong>失败:</strong> ${failed}</p>
+        <p><strong>通过率:</strong> ${((passed / testCases.length) * 100).toFixed(1)}%</p>
+      `;
+      summaryDiv.style.display = 'block';
+    };
+
+    window.runRealWorldTest = () => {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
+
+      // 测试用例1：冯兆贤的简历错误
+      const errorCase1 = `{
+  "personal_info": {
+    "name": "冯兆贤",
+    "contact": "+86 19227660411",
+    "email": "496224604@qq.com",
+    "location": "广州",
+    "age": "27",
+    "gender": "男"
+  },
+  "education": [
+    {
+      "school": "广州软件学院",
+      "degree": "本科",
+      "major": "软件工程",
+      "graduation_year": "2020",
+      "gpa": ""
+    }
+  ],
+  "work_experience": [
+    {
+      "company": "广州乐牛游戏科技有限公司",
+      "position": "开发工程师",
+      "duration": "2022.9 - 至今",
+      "duration_months": 20,
+      "industry": "游戏"`;
+
+      // 测试用例2：林洽文的简历错误（公司名截断）
+      const errorCase2 = `{ "personal_info": { "name": "林洽文", "contact": "18825139046", "email": "", "location": "广州", "age": "34", "gender": "男" }, "education": [ { "school": "广东交通职业技术学院", "degree": "大专", "major": "软件工程技术", "graduation_year": "2014", "gpa": "" }, { "school": "鹤山二中", "degree": "高中", "major": "高中理科", "graduation_year": "2011", "gpa": "" } ], "work_experience": [ { "company": "海南九紫网络科技有限公`;
+
+      // 测试两个错误案例
+      const testCases = [
+        { name: '案例1：冯兆贤（字段完整但对象未闭合）', input: errorCase1 },
+        { name: '案例2：林洽文（公司名字符串未闭合）', input: errorCase2 }
+      ];
+
+      testCases.forEach((testCase, index) => {
+        const resultDiv = document.createElement('div');
+        resultDiv.className = 'test-case';
+
+        let result, error;
+        try {
+          result = tryParseJSON(testCase.input);
+        } catch (e) {
+          error = e.message;
+        }
+
+        if (result) {
+          resultDiv.classList.add('pass');
+        } else {
+          resultDiv.classList.add('fail');
+        }
+
+        resultDiv.innerHTML = `
+          <div class="test-title">🔥 ${testCase.name}</div>
+          <div class="test-input"><strong>输入（不完整JSON）:</strong>\n${testCase.input.substring(0, 400)}...</div>
+          <div class="test-output">
+            ${result
+              ? `<span class="status pass">✓ 成功修复并解析</span><div style="margin-top:10px;"><strong>修复后的JSON:</strong><pre>${JSON.stringify(result, null, 2).substring(0, 800)}...</pre></div>`
+              : `<span class="status fail">✗ 无法解析</span><div class="error-detail">${error}</div>`
+            }
+          </div>
+        `;
+
+        resultsDiv.appendChild(resultDiv);
+      });
+    };
+
+    window.clearResults = () => {
+      document.getElementById('results').innerHTML = '';
+      document.getElementById('summary').style.display = 'none';
+    };
+
+    // 自动运行测试
+    setTimeout(() => {
+      runAllTests();
+    }, 500);
+  </script>
+</body>
+</html>
